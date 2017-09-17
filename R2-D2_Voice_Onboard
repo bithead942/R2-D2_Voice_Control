@@ -1,0 +1,102 @@
+/*
+   R2-D2 Voice Remote (Onboard)
+   by Bithead942
+
+    Board:  Fio v3 3.3V/8MHz
+
+  Remote control of the voice playback for the R2-D2 platform
+
+  The FIO board interacts with the Xbee radio and is connected to the Adafruit Mini Audio FX board.
+  When a command is received via the Xbee radio (an integer value between 0 and 20), the corresponding
+  sound is triggered on the Audio FX board and played through the on-board Class D amp to the speakers.
+
+
+  PINS USED:
+  Serial1 (Xbee)
+  Tx       0
+  Rx       1
+  SFX TX   5
+  SFX RX   6
+
+
+*/
+#include <SoftwareSerial.h>
+#include "Adafruit_Soundboard.h"
+
+
+// Choose any two pins that can be used with SoftwareSerial to RX & TX
+#define SFX_RST 4
+#define SFX_TX 5
+#define SFX_RX 6
+#define xbee Serial1
+#define debug Serial
+
+SoftwareSerial audiofx = SoftwareSerial(SFX_TX, SFX_RX);
+
+// pass the software serial to Adafruit_soundboard, the second
+// argument is the debug port (not used really) and the third
+// arg is the reset pin
+Adafruit_Soundboard sfx = Adafruit_Soundboard(&audiofx, NULL, SFX_RST);
+
+enum Group1
+{
+  G1_CHEERFUL = 0,
+  G1_COME_HERE = 1,
+  G1_CONCERNED = 2,
+  G1_DETERMINED = 3,
+  G1_EUREKA = 4,
+  G1_EXCITED = 5,
+  G1_FART = 6,
+  G1_FRAZZLED = 7,
+  G1_HELLO = 8,
+  G1_INTERESTED = 9,
+  G1_LAUGH = 10,
+  G1_PLAYFUL = 11,
+  G1_QUESTION = 12,
+  G1_READY = 13,
+  G1_SAD = 14,
+  G1_SARCASTIC = 15,
+  G1_SASSY = 16,
+  G1_SCREAM = 17,
+  G1_SHOCKED = 18,
+  G1_SHY = 19,
+  G1_SURPRISE = 20,
+};
+
+void setup()
+{
+  // Open serial communications and wait for port to open:
+  debug.begin(9600);
+  audiofx.begin(9600);
+  while (!audiofx) {
+    ; //wait
+  }
+
+  // set the data rate for the SoftwareSerial port
+  xbee.begin(9600);
+  while (!xbee) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+  debug.println("Ready");
+}
+
+void loop() // run over and over
+{
+  if (xbee.available())
+  {
+    int soundfile = 0;
+    soundfile = xbee.read() - 97;   //offset 97 for ascii 'a'
+    if (soundfile >= 0 && soundfile <= 20)
+    {
+      sfx.playTrack(soundfile);
+      debug.print("Playing track: ");
+      debug.println(soundfile);
+    }
+    else
+    {
+      debug.print("input out of range, ignored:  ");
+      debug.println(soundfile);
+    }
+  }
+
+}
